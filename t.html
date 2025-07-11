@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>💼 VIP Fraud Detection Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: #ffffff;
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .dashboard {
+      margin-top: 80px;
+    }
+    .card {
+      background-color: #2c3e50;
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+    }
+    .btn-upload {
+      background: linear-gradient(to right, #00c9ff, #92fe9d);
+      border: none;
+      color: #000;
+      font-weight: bold;
+    }
+    .btn-upload:hover {
+      background: linear-gradient(to right, #00bfff, #3cd3ad);
+    }
+    .result-box {
+      background-color: #1c2833;
+      border-left: 5px solid #00ffcc;
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 1rem;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container dashboard">
+    <h1 class="text-center mb-5">🕵️‍♂️ Fraud Detection Dashboard</h1>
+
+    <div class="card p-5">
+      <h4 class="mb-3 text-light">📁 Upload Your CSV File</h4>
+      <input type="file" class="form-control form-control-lg mb-3" id="csvFile" accept=".csv" />
+      <button class="btn btn-upload btn-lg w-100" onclick="uploadFile()">🔍 Analyze for Fraud</button>
+    </div>
+
+    <div class="card p-4 mt-5">
+      <h4 class="mb-3 text-light">📊 Prediction Result</h4>
+      <div id="loading" class="mb-3" style="display: none;">
+        <div class="spinner-border text-info" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-info">Analyzing your transactions...</p>
+      </div>
+      <div id="resultBox" class="result-box text-success">Waiting for input...</div>
+    </div>
+  </div>
+
+  <script>
+    async function uploadFile() {
+      const fileInput = document.getElementById('csvFile');
+      const file = fileInput.files[0];
+      const resultBox = document.getElementById('resultBox');
+      const loading = document.getElementById('loading');
+
+      if (!file) {
+        alert("⚠️ Please select a CSV file.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      resultBox.textContent = "";
+      loading.style.display = "block";
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/upload-predict/", {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await response.json();
+        loading.style.display = "none";
+
+        if (result.prediction_summary || result.summary) {
+          const summary = result.prediction_summary || result.summary;
+          resultBox.textContent =
+            "✅ Fraud Detection Completed!\n\n" +
+            Object.entries(summary).map(([label, count]) => `${label}: ${count}`).join('\n');
+        } else {
+          resultBox.textContent = "⚠️ No result found.";
+        }
+
+      } catch (error) {
+        loading.style.display = "none";
+        resultBox.classList.add("text-danger");
+        resultBox.textContent = "❌ Error: " + error.message;
+      }
+    }
+  </script>
+</body>
+</html>
